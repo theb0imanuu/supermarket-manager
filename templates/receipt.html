@@ -1,0 +1,197 @@
+{% extends "layout.html" %}
+
+{% block title %}Receipt - Super POS{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-receipt"></i> Receipt</h5>
+                    <div>
+                        <button id="printReceiptBtn" class="btn btn-sm btn-primary">
+                            <i class="bi bi-printer"></i> Print
+                        </button>
+                        <a href="/" class="btn btn-sm btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="receiptLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mb-0 mt-2">Loading receipt...</p>
+                    </div>
+                    
+                    <div id="receiptContent" class="receipt-container" style="display: none;">
+                        <div class="receipt-header">
+                            <h4 class="mb-1">Super POS System</h4>
+                            <p class="mb-1">123 Main Street</p>
+                            <p class="mb-1">Anytown, ST 12345</p>
+                            <p class="mb-1">Tel: (123) 456-7890</p>
+                        </div>
+                        
+                        <div class="receipt-info">
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Receipt #:</strong>
+                                    <div id="receiptNumber"></div>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <strong>Date:</strong>
+                                    <div id="receiptDate"></div>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <strong>Cashier:</strong> <span id="receiptCashier"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive mt-3">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th class="text-center">Qty</th>
+                                        <th class="text-end">Price</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="receiptItems">
+                                    <!-- Receipt items will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="receipt-total">
+                            <div class="d-flex justify-content-between">
+                                <span>Total:</span>
+                                <span id="receiptTotal"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="receipt-info mt-3">
+                            <div>
+                                <strong>Payment Method:</strong> <span id="receiptPaymentMethod"></span>
+                            </div>
+                            <div id="receiptPaymentRefContainer">
+                                <strong>Payment Reference:</strong> <span id="receiptPaymentRef"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="receipt-footer">
+                            <p class="mb-1">Thank you for shopping with us!</p>
+                            <p class="mb-0">Please come again.</p>
+                        </div>
+                    </div>
+                    
+                    <div id="receiptError" class="alert alert-danger text-center" style="display: none;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <p class="mb-0">Error loading receipt. Please try again later.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get transaction ID from URL
+        const transactionId = '{{ transaction_id }}';
+        
+        if (transactionId) {
+            loadReceipt(transactionId);
+        } else {
+            showReceiptError('Invalid transaction ID');
+        }
+        
+        // Print receipt button
+        document.getElementById('printReceiptBtn').addEventListener('click', function() {
+            window.print();
+        });
+    });
+    
+    /**
+     * Load receipt data
+     * @param {string} transactionId - Transaction ID
+     */
+    async function loadReceipt(transactionId) {
+        try {
+            const response = await apiCall(`/checkout/transactions/${transactionId}`);
+            
+            if (response.success && response.transaction) {
+                renderReceipt(response.transaction);
+            } else {
+                showReceiptError('Transaction not found');
+            }
+        } catch (error) {
+            console.error('Error loading receipt:', error);
+            showReceiptError('Failed to load receipt');
+        }
+    }
+    
+    /**
+     * Render receipt with transaction data
+     * @param {object} transaction - Transaction data
+     */
+    function renderReceipt(transaction) {
+        // Hide loading, show content
+        document.getElementById('receiptLoading').style.display = 'none';
+        document.getElementById('receiptContent').style.display = 'block';
+        
+        // Fill in receipt details
+        document.getElementById('receiptNumber').textContent = transaction.reference_number;
+        document.getElementById('receiptDate').textContent = formatDate(transaction.transaction_date);
+        document.getElementById('receiptCashier').textContent = transaction.cashier_name;
+        document.getElementById('receiptTotal').textContent = formatCurrency(transaction.total_amount);
+        document.getElementById('receiptPaymentMethod').textContent = transaction.payment_method.toUpperCase();
+        
+        // Payment reference
+        const refContainer = document.getElementById('receiptPaymentRefContainer');
+        if (transaction.payment_reference) {
+            document.getElementById('receiptPaymentRef').textContent = transaction.payment_reference;
+            refContainer.style.display = 'block';
+        } else {
+            refContainer.style.display = 'none';
+        }
+        
+        // Fill in receipt items
+        const itemsContainer = document.getElementById('receiptItems');
+        itemsContainer.innerHTML = '';
+        
+        transaction.items.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.product_name}</td>
+                <td class="text-center">${item.quantity}</td>
+                <td class="text-end">${formatCurrency(item.unit_price)}</td>
+                <td class="text-end">${formatCurrency(item.total_price)}</td>
+            `;
+            itemsContainer.appendChild(row);
+        });
+        
+        // Update page title with receipt number
+        document.title = `Receipt #${transaction.reference_number} - Super POS`;
+    }
+    
+    /**
+     * Show receipt error
+     * @param {string} message - Error message
+     */
+    function showReceiptError(message) {
+        document.getElementById('receiptLoading').style.display = 'none';
+        
+        const errorElem = document.getElementById('receiptError');
+        errorElem.textContent = message;
+        errorElem.style.display = 'block';
+    }
+</script>
+{% endblock %}

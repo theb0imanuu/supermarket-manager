@@ -1,0 +1,195 @@
+{% extends "layout.html" %}
+
+{% block title %}Super POS System{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8 text-center">
+            <i class="bi bi-shop display-1 mb-3"></i>
+            <h1 class="mb-4">Welcome to Super POS System</h1>
+            <p class="lead">A complete point of sale solution for small supermarkets</p>
+        </div>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-cart-check display-4 mb-3 text-primary"></i>
+                    <h5 class="card-title">Checkout</h5>
+                    <p class="card-text">Process sales transactions, manage cart, and generate receipts.</p>
+                    <a href="/checkout/" class="btn btn-primary">
+                        <i class="bi bi-cart"></i> Go to Checkout
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-box-seam display-4 mb-3 text-success"></i>
+                    <h5 class="card-title">Inventory</h5>
+                    <p class="card-text">Manage products, track stock levels, and update inventory.</p>
+                    <a href="/inventory/" class="btn btn-success">
+                        <i class="bi bi-box-seam"></i> Manage Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up display-4 mb-3 text-info"></i>
+                    <h5 class="card-title">Reports</h5>
+                    <p class="card-text">View sales reports, analyze top products, and monitor inventory.</p>
+                    <a href="/reports/" class="btn btn-info">
+                        <i class="bi bi-graph-up"></i> View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Transactions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="recentTransactionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Date</th>
+                                    <th>Items</th>
+                                    <th>Payment Method</th>
+                                    <th>Total</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mb-0 mt-2">Loading recent transactions...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadRecentTransactions();
+    });
+    
+    /**
+     * Load recent transactions
+     */
+    async function loadRecentTransactions() {
+        try {
+            const response = await apiCall('/checkout/transactions');
+            const transactions = response.transactions || [];
+            
+            renderTransactionsTable(transactions);
+        } catch (error) {
+            console.error('Error loading transactions:', error);
+            document.querySelector('#recentTransactionsTable tbody').innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <div class="alert alert-danger mb-0">
+                            Failed to load transactions. Please try again later.
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+    
+    /**
+     * Render transactions table
+     * @param {Array} transactions - Transactions to display
+     */
+    function renderTransactionsTable(transactions) {
+        const tableBody = document.querySelector('#recentTransactionsTable tbody');
+        
+        if (transactions.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <div class="alert alert-info mb-0">
+                            No transactions found. Process a sale to get started.
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tableBody.innerHTML = '';
+        
+        // Show only the most recent 5 transactions
+        const recentTransactions = transactions.slice(0, 5);
+        
+        recentTransactions.forEach(transaction => {
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${transaction.reference_number}</td>
+                <td>${formatDate(transaction.transaction_date)}</td>
+                <td>${transaction.items.length}</td>
+                <td>
+                    <span class="badge ${getPaymentMethodBadgeClass(transaction.payment_method)}">
+                        ${transaction.payment_method.toUpperCase()}
+                    </span>
+                </td>
+                <td>${formatCurrency(transaction.total_amount)}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary view-receipt" data-id="${transaction.id}">
+                        <i class="bi bi-receipt"></i> Receipt
+                    </button>
+                </td>
+            `;
+            
+            // Add event listener for receipt button
+            row.querySelector('.view-receipt').addEventListener('click', function() {
+                viewReceipt(transaction.id);
+            });
+            
+            tableBody.appendChild(row);
+        });
+    }
+    
+    /**
+     * Get badge class for payment method
+     * @param {string} method - Payment method
+     * @returns {string} Badge class
+     */
+    function getPaymentMethodBadgeClass(method) {
+        switch (method.toLowerCase()) {
+            case 'cash':
+                return 'bg-success';
+            case 'card':
+                return 'bg-primary';
+            case 'mpesa':
+                return 'bg-warning text-dark';
+            default:
+                return 'bg-secondary';
+        }
+    }
+</script>
+{% endblock %}
