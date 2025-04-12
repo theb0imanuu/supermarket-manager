@@ -201,21 +201,21 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="mpesaPhone" class="form-label">Phone Number</label>
-                                <input type="text" class="form-control" id="mpesaPhone" name="mpesaPhone" placeholder="e.g. 254712345678" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="mpesaReference" class="form-label">M-PESA Reference</label>
-                                <input type="text" class="form-control" id="mpesaReference" name="mpesaReference" placeholder="e.g. QK7114BYXM" required>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                                    <input type="text" class="form-control" id="mpesaPhone" name="mpesaPhone" placeholder="e.g. 254712345678 or 0712345678" required>
+                                </div>
+                                <div class="form-text">Enter your M-PESA registered phone number</div>
                             </div>
                         </div>
                         <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> To pay with M-PESA:
+                            <i class="bi bi-info-circle-fill me-2"></i> <strong>M-PESA STK Push</strong>
+                            <p class="mt-2 mb-1">When you click "Process Payment", we'll send an STK push request to your phone:</p>
                             <ol class="mb-0">
-                                <li>Go to M-PESA on your phone</li>
-                                <li>Select "Lipa na M-PESA"</li>
-                                <li>Enter the business number: 123456</li>
-                                <li>Enter the amount shown above</li>
-                                <li>Enter the M-PESA reference/confirmation code here</li>
+                                <li>You'll receive a payment prompt on your phone</li>
+                                <li>Enter your M-PESA PIN to authorize the payment</li>
+                                <li>The system will automatically verify your payment</li>
+                                <li>You'll receive an M-PESA confirmation message</li>
                             </ol>
                         </div>
                     </div>
