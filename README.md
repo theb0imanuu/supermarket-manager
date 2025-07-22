@@ -22,7 +22,7 @@
 ## 📞 Need Help?
 
 Having issues or want to request a feature? I'm happy to help!
-- Email: emmanuelmwaniki69@gmail.com
+- Email: emmanuelmwaniki09@gmail.com
 - GitHub Issues: [Open one here](https://github.com/theb0imanuu/SupermarketManager/issues)
 
 ---
