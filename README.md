@@ -1,6 +1,7 @@
 # 🛒 SupermarketManager
 
 **SupermarketManager** is a lightweight, no-fuss Point of Sale (POS) system brewed with Flask. It’s perfect for supermarkets that want clean, simple control over sales, stock, and receipts — all from a friendly web interface. 🧾✨
+Check out the live demo app [here](https://supermarket-manager.onrender.com/)
 
 ---
 
